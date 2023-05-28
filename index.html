@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Create With VR Room</title>
+    <!--Text to speech dependency-->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1117.0.min.js"></script>
+
+    <!--Host build file-->
+    <script type="text/javascript" src="dist/host.babylon.js"></script>
+    <!-- Policy -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src * ws: wss: gap: data: file: http: https: blob:; style-src * 'unsafe-inline' ws: wss: gap: data: file: http: https: blob:; script-src * 'unsafe-inline' 'unsafe-eval' ws: wss: gap: data: file: http: https: blob:"
+    />
+    <!-- Caches -->
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html" charset="utf-8" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <!-- Default -->
+    <meta name="edge" content="IE=edge" http-equiv="X-UA-Compatible" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, shrink-to-fit=no, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="browsermode" content="application" />
+    <meta name="description" content="Create With VR Room" />
+    <meta name="theme-color" content="#2A2342" />
+    <!-- Apple -->
+    <meta name="apple-mobile-web-app-title" content="Create With " />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- Android  -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <!-- Windows  -->
+    <meta name="application-name" content="Create With VR Room" />
+    <meta name="msapplication-navbutton-color" content="#2A2342" />
+    <meta name="msapplication-tooltip" content="ACI Digital Assistant" />
+    <meta name="msapplication-starturl" content="." />
+    <meta name="msapplication-TileColor" content="#2A2342" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <!-- Favorite -->
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+    <!-- Toaster - https://github.com/dolce/iziToast -->
+    <link href="css/toaster.css" rel="stylesheet" type="text/css" />
+
+    <link rel="stylesheet" type="text/css" href="style.css" nonce="none" />
+    <script type="text/javascript" nonce="none"></script>
+    <style>
+      html,
+      body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        border-color: black;
+      }
+
+      .tab {
+        background-color: rgb(219, 219, 219);
+        padding-bottom: 0px;
+        margin-bottom: -1px;
+        border-width: 1px;
+        border-style: solid;
+        z-index: 2;
+        position: relative;
+        outline: 0px;
+      }
+
+      .current {
+        background-color: white;
+        border-bottom-color: white;
+        font-weight: bold;
+      }
+
+      .textEntry {
+        min-width: 305px;
+        min-height: 200px;
+        outline: 0px;
+        padding: 10px;
+        resize: both;
+      }
+
+      .speechButton {
+        width: 78.75px;
+      }
+
+      .gestureButton {
+        width: 327px;
+        outline: 0px;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+
+      #textToSpeech {
+        padding: 2.5px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        display: none;
+      }
+
+      #loadScreen {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        background-image: url("assets/images/load_screen.png");
+        background-color: gray;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-position: center;
+        background-size: contain;
+        z-index: 9999;
+      }
+
+      #loader {
+        border: 16px solid #3498db38;
+        border-radius: 50%;
+        border-top: 16px solid #3498db;
+        width: 120px;
+        height: 120px;
+        -webkit-animation: spin 2s linear infinite;
+        animation: spin 2s linear infinite;
+        position: fixed;
+      }
+      .message-display{
+        display:none;
+      }
+
+      @-webkit-keyframes spin {
+        0% {
+          -webkit-transform: rotate(0deg);
+        }
+
+        100% {
+          -webkit-transform: rotate(360deg);
+        }
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body touch-action="none">
+      <!-- Text to speech controls -->
+      <div id="textToSpeech" style="display: none;">
+        <button class="tab current" onclick="toggleHost(event)" style="display: none;">Grace</button>
+        <!-- <button class="tab" onclick="toggleHost(event)">Alien</button> -->
+        <div>
+          <textarea autofocus size="23" type="text" class="textEntry Grace" style="display: none;"></textarea>
+          <!-- <textarea autofocus size="23" type="text" class="textEntry Alien">
+      <speak>
+          Hi there! As you can see I'm set up to be a host too, although I don't use
+          the same type of skeleton as any of the original Amazon Sumerian hosts. With
+          open source hosts, you can apply host functionality to any custom animated
+          character you'd like. I'm excited to see what kinds of interesting host
+          characters you'll bring to life!
+      </speak>
+              </textarea> -->
+        </div>
+        <div >
+          <button id="play" class="speechButton">Record</button>
+          <!-- <button id="pause" class="speechButton">Pause</button>
+          <button id="resume" class="speechButton">Resume</button>
+          <button id="stop" class="speechButton">Stop</button> -->
+        </div>
+        <!-- <div>
+          <button id="gestures" class="gestureButton">Generate Gestures</button>
+        </div>
+        <div>
+          <select id="emotes" class="gestureButton"></select>
+        </div>
+        <div>
+          <button id="playEmote" class="gestureButton">Play Emote</button>
+        </div> -->
+        <div>
+          <audio id="player" controls></audio>
+          <br>
+          <button id="record" type="button" style="display: none;">
+            Record
+          </button>
+          <button id="stopRecording" style="display: none;">Stop recording</button>
+          <a id="download" style="display: none;">Download</a>
+        </div>
+        <canvas class="visualizer" style="display: none;"></canvas>
+        <p><span id="message" style="display: none;"></span></p> 
+      </div> 
+      
+        Record
+      </button>
+      
+  </div>
+    <!-- ******************************** -->
+    <!-- CUSTOM: Loader for this template -->
+    <!-- ******************************** -->
+    <div id="panel">
+      <center>
+        <div id="proj">Create With VR Room</div>
+        <div id="load" class="load"></div>
+        <div id="status">Loading</div>
+        <div id="details">Loading script files</div>
+      </center>
+    </div>
+    <!-- ******************************** -->
+    <!-- CANVAS: Markup for this template -->
+    <!-- ******************************** -->
+    <canvas id="cvs"></canvas>
+    <!-- ******************************** -->
+    <!-- SCRIPT: Markup for this template -->
+    <!-- ******************************** -->
+    <script type="text/javascript" src="scripts/fastclick.js"></script>
+    <script type="text/javascript" src="scripts/toaster.js"></script>
+    <script type="text/javascript" src="scripts/meter.js"></script>
+    <script type="text/javascript" src="scripts/pep.js"></script>
+
+    <!-- Engine Libraries -->
+    <script type="text/javascript" src="scripts/babylon.min.js"></script>
+    <script type="text/javascript" src="scripts/babylon.gui.js"></script>
+    <script type="text/javascript" src="scripts/babylon.gltf.js"></script>
+    <script type="text/javascript" src="scripts/babylon.earcut.js"></script>
+
+    <!-- Support Libraries -->
+    <script type="text/javascript" src="scripts/ammo.js"></script>
+    <script type="text/javascript" src="scripts/recast.js"></script>
+    <script type="text/javascript" src="scripts/babylon.inspector.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
+
+    <!-- Manager Libraries -->
+    <script type="text/javascript" src="scripts/babylon.manager.js"></script>
+    <script type="text/javascript" src="scripts/babylon.materials.js"></script>
+
+    <!-- Project Script Bundle -->
+    <script type="text/javascript" src="scenes/CreateWithVRRoom.js"></script>
+    <!-- voice commands -->
+    <script src="aws-lex-audio.js" type="text/javascript"></script>
+    <script src="renderer.js" type="text/javascript"></script>
+    <script type="text/javascript">
+      const downloadLink = document.getElementById("download");
+      const stopButton = document.getElementById("stopRecording");
+
+      // const handleSuccess = (stream) => {
+        
+      //   // console.log("stream",stream)
+      //   window.audioStream = stream;
+      //   const options = { mimeType: "audio/wav" };
+      //   const recordedChunks = [];
+      //   const mediaRecorder = new MediaRecorder(stream, options);
+      //   // console.log("media",mediaRecorder.options)
+
+      //   mediaRecorder.addEventListener("dataavailable", function(e) {
+      //     if (e.data.size > 0) recordedChunks.push(e.data);
+      //     // console.log("recordedChunks",recordedChunks)
+      //   });
+
+      //   mediaRecorder.addEventListener("stop", function(e) {
+      //     var blob=new Blob(recordedChunks,{type:'audio/wav'})
+      //     // console.log("recordedChunks",blob)
+      //     // console.log("mediaRecorder",blob.type)
+      //     const result = URL.createObjectURL(new Blob(recordedChunks,{type:'audio/wav'}));
+      //     downloadLink.href = result
+      //     downloadLink.download = "acetest.wav";
+      //     player.src = result
+
+      //     player.blob=blob
+      //     player.type=blob.type   
+      //     plyer.recordedChunks=  recordedChunks
+      //         //  console.log("result",result)
+      //     const recordBtn = document.getElementById("record");
+      //     recordBtn.innerHTML = "Start Recording";
+      //   });
+
+      //   stopButton.addEventListener("click", function() {
+      //     // alert('Stop')
+      //     const recordBtn = document.getElementById("record");
+      //     recordBtn.disabled = false;
+      //     const tracks = stream.getTracks();
+      //     // console.log("tracksfromsba",tracks)
+      //     const player = document.getElementById("player");
+      //     tracks.forEach(function(track) {
+      //       track.stop();
+      //     });
+      //   });
+
+      //   mediaRecorder.start();
+      // };
+
+      const startRecording = (stream) => {
+        //debugger
+        // var waveform = window.Waveform();
+        var waveform = window.Waveform();
+        var message = document.getElementById('message');
+        var config, conversation;
+        message.textContent = 'Passive';
+    // message.textContent = 'Passive';
+        // // console.log("Start recording",stream)
+        // const recordBtn = document.getElementById("record");
+        // recordBtn.disabled = true;
+        // navigator.mediaDevices
+        //   .getUserMedia({ audio: true, video: false })
+        //   .then(handleSuccess)
+        //   .catch(()=> alert('unable to capture audio'));
+
+          AWS.config.region = 'us-east-1'; // Region
+		AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+			IdentityPoolId: 'us-east-1:3bcf3cee-80d6-407c-8dec-a13c86896607',
+		});
+        
+        config = {
+            lexConfig: {botId : 'RGZLN5GONH'}
+        };
+
+        conversation = new LexAudio.conversation(config, function (state) {
+            message.textContent = state + '...';
+            if (state === 'Listening') {
+                waveform.prepCanvas();
+            }
+            if (state === 'Sending') {
+               waveform.clearCanvas();
+            }
+        }, function (data) {
+            console.log('Transcript: ', data.inputTranscript, ", Response: ", data.messages);
+            var gezipedData=atob(data.messages)
+            // decode the base64 encoded data
+            //const gezipedData = atob("H4sIAAAAAAAA//NIzcnJVyguSUzOzi9LLUrLyS/XUSjJSMzLLlZIyy9SSMwpT6wsVshIzSnIzEtXBACs78K6LwAAAA==")
+            const gzipedDataArray = Uint8Array.from(gezipedData, c => c.charCodeAt(0))
+
+            console.log('gzipeddata', gzipedDataArray);
+            const ungzipedData = pako.ungzip(gzipedDataArray);
+            
+
+            console.log('ungziped data', new TextDecoder().decode(ungzipedData));        
+            var response=new TextDecoder().decode(ungzipedData)
+			
+
+			      console.log("datafrom lexresponse",response);
+        }, function (error) {
+          console.log('Textcontent',error)
+            message.textContent = error;
+        }, function (timeDomain, bufferLength) {
+            waveform.visualizeAudioBuffer(timeDomain, bufferLength);
+        });
+        conversation.advanceConversation();
+
+      };
+
+      const stopRecording = (stream) => {
+        // alert('Inside stop')
+        // console.log("Stop recording",stream)
+        const tracks = stream.getTracks();
+        // console.log("Tracks",tracks)
+        const player = document.getElementById("player");
+        // console.log("player",player)
+        tracks.forEach(function(track) {
+          track.stop();
+        });
+      };
+    </script>
+    <!-- Default Scene Loader -->
+    <script type="module" src="index.js"></script>
+    <script type="module" src="amazonHost.js"></script>
+    
+    <!-- <script src="renderer.js" type="text/javascript"></script> -->
+     
+    </script>
+  </body>
+</html>
